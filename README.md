@@ -82,6 +82,49 @@ behaviour:
 `config-conventional` is Conventional Commits **plus opinions**, deliberately. This is
 the subtraction.
 
+## Packaging, and one trap when working on this locally
+
+**`extends` resolves from the config file's real directory, not the consumer's.** That
+one fact explains everything below.
+
+Installed normally — from git, or from a tarball — this package lands as a real directory
+at `node_modules/@vts/commitlint-config`. Resolving `@commitlint/config-conventional`
+from there walks up into the consumer's `node_modules` and finds it. That is why
+`config-conventional` is a **peer** dependency: the consumer already has it, and the
+consumer picks the version.
+
+**`npm install ../commitlint-config` breaks that, silently and confusingly.** A path
+install creates a *symlink* to the source checkout, so resolution starts in
+`~/src/commitlint-config`, which has no `node_modules`. Every message then fails, with no
+rule named:
+
+```
+Error: Cannot find module "@commitlint/config-conventional"
+       from "C:\Users\tyler\src\commitlint-config"
+```
+
+Nothing is wrong with the package. To test it the way it ships:
+
+```bash
+cd commitlint-config && npm pack          # → vts-commitlint-config-0.1.0.tgz
+cd ../consumer && npm install ../commitlint-config/vts-commitlint-config-0.1.0.tgz
+```
+
+The same applies to `npm link`, for the same reason.
+
+**A JSON consumer config is fine.** Plugins are objects containing functions, so a
+consumer *authoring* a plugin needs a `.js` config — but inheriting one does not, because
+the functions live in this package. `.commitlintrc.json` with three lines works.
+
+**Pin a tag, not a branch.** `#semver:^0.1.0` resolves against this repository's tags and
+`package-lock.json` records the resolved commit, so consumers upgrade deliberately rather
+than drifting when `main` moves.
+
+**Not published to a registry**, deliberately. Distribution is by git dependency, which
+needs no credentials for a public repository, no publish pipeline, and no name held
+anywhere. Tags, semver ranges and lockfile pinning all work regardless; what a registry
+would add is discoverability and provenance attestations, neither of which this needs.
+
 ## Licence
 
 AGPL-3.0-or-later.
