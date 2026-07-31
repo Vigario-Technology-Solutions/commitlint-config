@@ -118,10 +118,10 @@ fails in another, which is not a standard.
 one fact explains everything below.
 
 Installed normally — from git, or from a tarball — this package lands as a real directory
-at `node_modules/@vts/commitlint-config`. Resolving `@commitlint/config-conventional`
-from there walks up into the consumer's `node_modules` and finds it. That is why
-`config-conventional` is a **peer** dependency: the consumer already has it, and the
-consumer picks the version.
+at `node_modules/@vts/commitlint-config`. Resolving the parser preset from there walks up
+into the consumer's `node_modules` and finds it. That is why
+`conventional-changelog-conventionalcommits` is a **peer** dependency: the consumer already
+has it, and the consumer picks the version.
 
 **`npm install ../commitlint-config` breaks that, silently and confusingly.** A path
 install creates a *symlink* to the source checkout, so resolution starts in
@@ -129,15 +129,15 @@ install creates a *symlink* to the source checkout, so resolution starts in
 rule named:
 
 ```
-Error: Cannot find module "@commitlint/config-conventional"
+Error: Cannot find module "conventional-changelog-conventionalcommits"
        from "C:\Users\tyler\src\commitlint-config"
 ```
 
 Nothing is wrong with the package. To test it the way it ships:
 
 ```bash
-cd commitlint-config && npm pack          # → vts-commitlint-config-0.1.0.tgz
-cd ../consumer && npm install ../commitlint-config/vts-commitlint-config-0.1.0.tgz
+cd commitlint-config && npm pack          # → vts-commitlint-config-0.3.0.tgz
+cd ../consumer && npm install ../commitlint-config/vts-commitlint-config-0.3.0.tgz
 ```
 
 The same applies to `npm link`, for the same reason.
@@ -146,7 +146,7 @@ The same applies to `npm link`, for the same reason.
 consumer *authoring* a plugin needs a `.js` config — but inheriting one does not, because
 the functions live in this package. `.commitlintrc.json` with three lines works.
 
-**Pin a tag, not a branch.** `#semver:^0.1.0` resolves against this repository's tags and
+**Pin a tag, not a branch.** `#semver:^0.3.0` resolves against this repository's tags and
 `package-lock.json` records the resolved commit, so consumers upgrade deliberately rather
 than drifting when `main` moves.
 
