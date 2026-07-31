@@ -21,68 +21,96 @@ the tags:
 ```jsonc
 "devDependencies": {
   "@commitlint/cli": "^20",
-  "@commitlint/config-conventional": "^20",
-  "@vts/commitlint-config": "github:Vigario-Technology-Solutions/commitlint-config#semver:^0.1.0"
+  "conventional-changelog-conventionalcommits": "^8",
+  "@vts/commitlint-config": "github:Vigario-Technology-Solutions/commitlint-config#semver:^0.3.0"
 }
 ```
 
-`@commitlint/config-conventional` is a **peer** dependency: this extends it rather than
-replacing it, so the consumer decides its version.
+`conventional-changelog-conventionalcommits` is a **peer** dependency — the parser preset,
+which is the only thing this needs from that side of the ecosystem. The consumer decides
+its version.
 
-## What it changes
+`@commitlint/config-conventional` is **not** required and is no longer extended. From
+0.3.0 this declares the parser preset directly rather than inheriting twelve rules and
+disabling eight of them.
 
-| rule | here | why |
-|---|---|---|
-| `type-enum` | **off** | exact-match, case-sensitive — see below |
-| `type-enum-any-case` | **on** | same enum, any case |
-| `type-case` | off | style, not specification |
-| `scope-case` | off | style |
-| `subject-case` | off | style |
-| `subject-full-stop` | off | style |
-| `header-max-length` | off | style |
-| `body-max-line-length` | off | style |
-| `footer-max-line-length` | off | style |
-| `type-empty`, `subject-empty`, `header-trim` | on | whether the message parses at all |
+## What it enforces
 
-Types: `feat`, `fix`, `refactor`, `perf`, `revert`, `ci`, `build`, `docs`, `test`,
-`chore`.
+Two things, and deliberately little else.
+
+**`feat` and `fix` are a floor.** They are the only types the specification gives
+behaviour to — MINOR and PATCH, with `!` for MAJOR — and the only strings anything
+downstream reads. A consumer cannot remove them; the rule unions them in on every
+evaluation.
+
+**Everything else is a replaceable starter.** The reference implementation's
+remaining nine ship as a default. A repository may swap the whole set for types its own domain warrants.
+
+```js
+// inherit the starter
+export default { extends: ["@vts"] };
+
+// replace it — feat and fix survive regardless
+export default {
+  extends: ["@vts"],
+  rules: { "type-enum-any-case": [2, "always", ["deploy", "migrate"]] },
+};
+
+// the floor and nothing else
+export default {
+  extends: ["@vts"],
+  rules: { "type-enum-any-case": [2, "always", []] },
+};
+```
+
+## Why the set beyond the two is open
+
+The specification defines behaviour for `feat` and `fix`, says of everything else
+only that other types **MAY** be used, and enumerates nothing. Its FAQ goes further:
+the flexibility "allows your team to come up with their own types and change those
+types over time."
+
+The familiar eleven are nobody's standard. They are **not Angular's** — Angular
+publishes eight (`build`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `test`),
+with no `chore`, no `style`, and `revert` as a special prefix rather than a type.
+The eleven come from the reference implementation `conventional-changelog` ships,
+read downstream as though it were the specification.
+
+So any restriction past the two is a local decision, and one this config declines to
+make on a consumer's behalf.
+
+A narrowed enum costs twice: it rejects a commit the standard accepts, and it
+forecloses the addition a new domain would justify. An earlier version of this file
+did exactly that — it dropped `style` from the eleven, not by decision but because
+the rule below needed a list and the list became policy.
 
 ## Why the enum is replaced rather than configured
 
-The built-in rule is an exact match:
-
-```js
-return enums.indexOf(value) > -1;
-```
-
-A lowercase array, `indexOf`, no case option. Conventional Commits **item 15**:
+The built-in `type-enum` is `enums.indexOf(value) > -1` — an exact match against a
+lowercase array, with no case option exposed. Specification item 15:
 
 > The units of information that make up Conventional Commits MUST NOT be treated as
 > case-sensitive by implementors, with the exception of BREAKING CHANGE which MUST be
 > uppercase.
 
-The type is a structural unit — it is the thing parsed to decide MINOR versus PATCH — so
-rejecting `FEAT:` is non-conformant, and no configuration reaches it. Switching the rule
-off and supplying an equivalent is the only route that keeps the enum and obeys the spec.
+The type is such a unit, so the built-in is non-conformant and cannot be configured
+out of it. Replacing it is the only route that keeps an enum while obeying the spec.
 
-## Why the style rules are dropped
+The replacement takes its list from the rule's **value** rather than a module
+constant, which is what makes it extensible at all.
 
-They are not in the specification, and they have no counterpart in
-[cocogitto](https://github.com/cocogitto/cocogitto), whose configuration is grammar,
-types, scopes and release mechanics with no style rules at all. Enforcing appearance only
-where a toolchain happens to be able to means the same commit message passes in one
-repository and fails in another — which is not a standard, it is a coin flip on which
-repository you opened.
+## Why there is no `extends: @commitlint/config-conventional`
 
-This is also the maintainers' own recommendation. commitlint#2141, *"subject-case rule
-breaks ConventionalCommits spec"*, ran from 2020 to June 2026 and closed as intended
-behaviour:
+Its only contribution to *parsing* is one line — `parserPreset`. The other twelve
+entries are house style. An earlier version of this file inherited all of it and then
+disabled eight, which is a lot of argument to end up where declaring the preset
+directly starts.
 
-> subject-case is an opinionated default of @commitlint/config-conventional, not a spec
-> requirement … and it can be disabled with `"subject-case": [0]`.
-
-`config-conventional` is Conventional Commits **plus opinions**, deliberately. This is
-the subtraction.
+Style rules are dropped rather than tuned because the specification says nothing
+about appearance, and **cocogitto** — the other linter in use across these
+repositories — has no equivalent for any of them. Enforcing appearance only where a
+toolchain happens to be able to means the same commit passes in one repository and
+fails in another, which is not a standard.
 
 ## Packaging, and one trap when working on this locally
 
@@ -90,10 +118,10 @@ the subtraction.
 one fact explains everything below.
 
 Installed normally — from git, or from a tarball — this package lands as a real directory
-at `node_modules/@vts/commitlint-config`. Resolving `@commitlint/config-conventional`
-from there walks up into the consumer's `node_modules` and finds it. That is why
-`config-conventional` is a **peer** dependency: the consumer already has it, and the
-consumer picks the version.
+at `node_modules/@vts/commitlint-config`. Resolving the parser preset from there walks up
+into the consumer's `node_modules` and finds it. That is why
+`conventional-changelog-conventionalcommits` is a **peer** dependency: the consumer already
+has it, and the consumer picks the version.
 
 **`npm install ../commitlint-config` breaks that, silently and confusingly.** A path
 install creates a *symlink* to the source checkout, so resolution starts in
@@ -101,15 +129,15 @@ install creates a *symlink* to the source checkout, so resolution starts in
 rule named:
 
 ```
-Error: Cannot find module "@commitlint/config-conventional"
+Error: Cannot find module "conventional-changelog-conventionalcommits"
        from "C:\Users\tyler\src\commitlint-config"
 ```
 
 Nothing is wrong with the package. To test it the way it ships:
 
 ```bash
-cd commitlint-config && npm pack          # → vts-commitlint-config-0.1.0.tgz
-cd ../consumer && npm install ../commitlint-config/vts-commitlint-config-0.1.0.tgz
+cd commitlint-config && npm pack          # → vts-commitlint-config-0.3.0.tgz
+cd ../consumer && npm install ../commitlint-config/vts-commitlint-config-0.3.0.tgz
 ```
 
 The same applies to `npm link`, for the same reason.
@@ -118,7 +146,7 @@ The same applies to `npm link`, for the same reason.
 consumer *authoring* a plugin needs a `.js` config — but inheriting one does not, because
 the functions live in this package. `.commitlintrc.json` with three lines works.
 
-**Pin a tag, not a branch.** `#semver:^0.1.0` resolves against this repository's tags and
+**Pin a tag, not a branch.** `#semver:^0.3.0` resolves against this repository's tags and
 `package-lock.json` records the resolved commit, so consumers upgrade deliberately rather
 than drifting when `main` moves.
 
