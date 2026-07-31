@@ -38,8 +38,8 @@ behaviour to — MINOR and PATCH, with `!` for MAJOR — and the only strings an
 downstream reads. A consumer cannot remove them; the rule unions them in on every
 evaluation.
 
-**Everything else is a replaceable starter.** Angular's remaining nine ship as a
-default. A repository may swap the whole set for types its own domain warrants.
+**Everything else is a replaceable starter.** The reference implementation's
+remaining nine ship as a default. A repository may swap the whole set for types its own domain warrants.
 
 ```js
 // inherit the starter
@@ -65,9 +65,14 @@ only that other types **MAY** be used, and enumerates nothing. Its FAQ goes furt
 the flexibility "allows your team to come up with their own types and change those
 types over time."
 
-The familiar eleven are **Angular's** list, adopted by the reference implementation
-and read downstream as though normative. So any restriction past the two is a local
-decision, and one this config declines to make on a consumer's behalf.
+The familiar eleven are nobody's standard. They are **not Angular's** — Angular
+publishes eight (`build`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `test`),
+with no `chore`, no `style`, and `revert` as a special prefix rather than a type.
+The eleven come from the reference implementation `conventional-changelog` ships,
+read downstream as though it were the specification.
+
+So any restriction past the two is a local decision, and one this config declines to
+make on a consumer's behalf.
 
 A narrowed enum costs twice: it rejects a commit the standard accepts, and it
 forecloses the addition a new domain would justify. An earlier version of this file

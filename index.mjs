@@ -7,8 +7,11 @@
 // flexibility "allows your team to come up with their own types and change those
 // types over time."
 //
-// So the familiar eleven are Angular's list, adopted by the reference
-// implementation and read downstream as though normative. Every restriction
+// The familiar eleven are nobody's standard. They are not Angular's -- Angular
+// publishes eight (build, ci, docs, feat, fix, perf, refactor, test) with no
+// `chore`, no `style`, and `revert` as a special prefix rather than a type. The
+// eleven come from the reference implementation conventional-changelog ships, and
+// are read downstream as though they were the specification. Every restriction
 // beyond the two is a local decision, and this file makes exactly one.
 //
 // THE ONE DECISION: `feat` and `fix` are a floor. A consumer may replace the
@@ -28,8 +31,8 @@ const PARSER_PRESET = "conventional-changelog-conventionalcommits";
 // Enforced always. Not configurable, by design.
 const REQUIRED = ["feat", "fix"];
 
-// Offered, and fully replaceable. Angular's remaining nine -- a starting point
-// rather than a boundary.
+// Offered, and fully replaceable. The reference implementation's remaining nine --
+// a starting point rather than a boundary.
 const STARTER = [
   "build", "chore", "ci", "docs", "style",
   "refactor", "perf", "test", "revert",
