@@ -40,6 +40,8 @@ replacing it, so the consumer decides its version.
 | `subject-case` | off | style |
 | `subject-full-stop` | off | style |
 | `header-max-length` | off | style |
+| `body-max-line-length` | off | style |
+| `footer-max-line-length` | off | style |
 | `type-empty`, `subject-empty`, `header-trim` | on | whether the message parses at all |
 
 Types: `feat`, `fix`, `refactor`, `perf`, `revert`, `ci`, `build`, `docs`, `test`,

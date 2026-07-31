@@ -59,7 +59,14 @@ export default {
     "scope-case": [0],
     "subject-case": [0],
     "subject-full-stop": [0],
+
+    // Length limits are style too, and config-conventional sets all three at error.
+    // The specification says nothing about how long any part of a message may be, and
+    // cocogitto has no equivalent, so these are the same divergence as the case rules
+    // one line up.
     "header-max-length": [0],
+    "body-max-line-length": [0],
+    "footer-max-line-length": [0],
 
     // Kept, because these decide whether the message parses as a conventional commit at
     // all -- which is what every downstream tool depends on.

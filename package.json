@@ -1,6 +1,6 @@
 {
   "name": "@vts/commitlint-config",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Conventional Commits without config-conventional's opinions, and with a spec-conformant type enum.",
   "keywords": ["commitlint", "commitlint-config", "conventional-commits"],
   "homepage": "https://github.com/Vigario-Technology-Solutions/commitlint-config",
