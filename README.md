@@ -21,13 +21,18 @@ the tags:
 ```jsonc
 "devDependencies": {
   "@commitlint/cli": "^20",
-  "@commitlint/config-conventional": "^20",
-  "@vts/commitlint-config": "github:Vigario-Technology-Solutions/commitlint-config#semver:^0.1.0"
+  "conventional-changelog-conventionalcommits": "^8",
+  "@vts/commitlint-config": "github:Vigario-Technology-Solutions/commitlint-config#semver:^0.3.0"
 }
 ```
 
-`@commitlint/config-conventional` is a **peer** dependency: this extends it rather than
-replacing it, so the consumer decides its version.
+`conventional-changelog-conventionalcommits` is a **peer** dependency — the parser preset,
+which is the only thing this needs from that side of the ecosystem. The consumer decides
+its version.
+
+`@commitlint/config-conventional` is **not** required and is no longer extended. From
+0.3.0 this declares the parser preset directly rather than inheriting twelve rules and
+disabling eight of them.
 
 ## What it enforces
 

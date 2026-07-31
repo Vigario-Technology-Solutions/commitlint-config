@@ -60,14 +60,28 @@ export default {
         //   value === undefined   inherit STARTER
         //   value === []          the floor and nothing else
         //   value === [...]       those, plus the floor
-        "type-enum-any-case": ({ type }, _when, value) => {
-          const optional = value === undefined ? STARTER : value;
-          const allowed = [...new Set([...REQUIRED, ...optional])];
-          // `type-empty` owns the missing-type failure. Reporting it here too
-          // would give two errors for one mistake.
-          if (!type) return [true];
+        // `when` is honoured because commitlint rules are expected to: "never"
+        // inverts the assertion, as it does for the built-in `type-enum`. The
+        // floor is not inverted with it — under "never" a consumer is naming
+        // types to forbid, and forbidding `feat` is not on offer.
+        "type-enum-any-case": ({ type }, when, value) => {
+          if (!type) return [true]; // `type-empty` owns the missing-type failure
+          const negated = when === "never";
+          const listed = (value === undefined ? STARTER : value)
+            .map((t) => String(t).toLowerCase())
+            .includes(type.toLowerCase());
+          const required = REQUIRED.includes(type.toLowerCase());
+
+          if (negated) {
+            return [
+              required || !listed,
+              `type must not be one of [${(value === undefined ? STARTER : value).join(", ")}]` +
+                ` -- got "${type}"`,
+            ];
+          }
+          const allowed = [...new Set([...REQUIRED, ...(value === undefined ? STARTER : value)])];
           return [
-            allowed.includes(type.toLowerCase()),
+            required || listed,
             `type must be one of [${allowed.join(", ")}], any case -- got "${type}"`,
           ];
         },
