@@ -1,8 +1,12 @@
 {
   "name": "@vts/commitlint-config",
-  "version": "0.2.0",
-  "description": "Conventional Commits without config-conventional's opinions, and with a spec-conformant type enum.",
-  "keywords": ["commitlint", "commitlint-config", "conventional-commits"],
+  "version": "0.3.0",
+  "description": "Conventional Commits: feat and fix enforced as a floor, every other type a replaceable starter.",
+  "keywords": [
+    "commitlint",
+    "commitlint-config",
+    "conventional-commits"
+  ],
   "homepage": "https://github.com/Vigario-Technology-Solutions/commitlint-config",
   "repository": {
     "type": "git",
@@ -13,8 +17,10 @@
   "type": "module",
   "main": "index.mjs",
   "exports": "./index.mjs",
-  "files": ["index.mjs"],
+  "files": [
+    "index.mjs"
+  ],
   "peerDependencies": {
-    "@commitlint/config-conventional": ">=19"
+    "conventional-changelog-conventionalcommits": ">=8"
   }
 }

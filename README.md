@@ -29,60 +29,78 @@ the tags:
 `@commitlint/config-conventional` is a **peer** dependency: this extends it rather than
 replacing it, so the consumer decides its version.
 
-## What it changes
+## What it enforces
 
-| rule | here | why |
-|---|---|---|
-| `type-enum` | **off** | exact-match, case-sensitive — see below |
-| `type-enum-any-case` | **on** | same enum, any case |
-| `type-case` | off | style, not specification |
-| `scope-case` | off | style |
-| `subject-case` | off | style |
-| `subject-full-stop` | off | style |
-| `header-max-length` | off | style |
-| `body-max-line-length` | off | style |
-| `footer-max-line-length` | off | style |
-| `type-empty`, `subject-empty`, `header-trim` | on | whether the message parses at all |
+Two things, and deliberately little else.
 
-Types: `feat`, `fix`, `refactor`, `perf`, `revert`, `ci`, `build`, `docs`, `test`,
-`chore`.
+**`feat` and `fix` are a floor.** They are the only types the specification gives
+behaviour to — MINOR and PATCH, with `!` for MAJOR — and the only strings anything
+downstream reads. A consumer cannot remove them; the rule unions them in on every
+evaluation.
+
+**Everything else is a replaceable starter.** Angular's remaining nine ship as a
+default. A repository may swap the whole set for types its own domain warrants.
+
+```js
+// inherit the starter
+export default { extends: ["@vts"] };
+
+// replace it — feat and fix survive regardless
+export default {
+  extends: ["@vts"],
+  rules: { "type-enum-any-case": [2, "always", ["deploy", "migrate"]] },
+};
+
+// the floor and nothing else
+export default {
+  extends: ["@vts"],
+  rules: { "type-enum-any-case": [2, "always", []] },
+};
+```
+
+## Why the set beyond the two is open
+
+The specification defines behaviour for `feat` and `fix`, says of everything else
+only that other types **MAY** be used, and enumerates nothing. Its FAQ goes further:
+the flexibility "allows your team to come up with their own types and change those
+types over time."
+
+The familiar eleven are **Angular's** list, adopted by the reference implementation
+and read downstream as though normative. So any restriction past the two is a local
+decision, and one this config declines to make on a consumer's behalf.
+
+A narrowed enum costs twice: it rejects a commit the standard accepts, and it
+forecloses the addition a new domain would justify. An earlier version of this file
+did exactly that — it dropped `style` from the eleven, not by decision but because
+the rule below needed a list and the list became policy.
 
 ## Why the enum is replaced rather than configured
 
-The built-in rule is an exact match:
-
-```js
-return enums.indexOf(value) > -1;
-```
-
-A lowercase array, `indexOf`, no case option. Conventional Commits **item 15**:
+The built-in `type-enum` is `enums.indexOf(value) > -1` — an exact match against a
+lowercase array, with no case option exposed. Specification item 15:
 
 > The units of information that make up Conventional Commits MUST NOT be treated as
 > case-sensitive by implementors, with the exception of BREAKING CHANGE which MUST be
 > uppercase.
 
-The type is a structural unit — it is the thing parsed to decide MINOR versus PATCH — so
-rejecting `FEAT:` is non-conformant, and no configuration reaches it. Switching the rule
-off and supplying an equivalent is the only route that keeps the enum and obeys the spec.
+The type is such a unit, so the built-in is non-conformant and cannot be configured
+out of it. Replacing it is the only route that keeps an enum while obeying the spec.
 
-## Why the style rules are dropped
+The replacement takes its list from the rule's **value** rather than a module
+constant, which is what makes it extensible at all.
 
-They are not in the specification, and they have no counterpart in
-[cocogitto](https://github.com/cocogitto/cocogitto), whose configuration is grammar,
-types, scopes and release mechanics with no style rules at all. Enforcing appearance only
-where a toolchain happens to be able to means the same commit message passes in one
-repository and fails in another — which is not a standard, it is a coin flip on which
-repository you opened.
+## Why there is no `extends: @commitlint/config-conventional`
 
-This is also the maintainers' own recommendation. commitlint#2141, *"subject-case rule
-breaks ConventionalCommits spec"*, ran from 2020 to June 2026 and closed as intended
-behaviour:
+Its only contribution to *parsing* is one line — `parserPreset`. The other twelve
+entries are house style. An earlier version of this file inherited all of it and then
+disabled eight, which is a lot of argument to end up where declaring the preset
+directly starts.
 
-> subject-case is an opinionated default of @commitlint/config-conventional, not a spec
-> requirement … and it can be disabled with `"subject-case": [0]`.
-
-`config-conventional` is Conventional Commits **plus opinions**, deliberately. This is
-the subtraction.
+Style rules are dropped rather than tuned because the specification says nothing
+about appearance, and **cocogitto** — the other linter in use across these
+repositories — has no equivalent for any of them. Enforcing appearance only where a
+toolchain happens to be able to means the same commit passes in one repository and
+fails in another, which is not a standard.
 
 ## Packaging, and one trap when working on this locally
 
