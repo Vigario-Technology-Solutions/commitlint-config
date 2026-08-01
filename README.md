@@ -5,13 +5,29 @@ with a type enum that obeys the specification.
 
 ```json
 {
-  "extends": ["@vts"]
+  "extends": ["@vts/commitlint-config"]
 }
 ```
 
-`@vts` resolves to `@vts/commitlint-config`; commitlint appends `commitlint-config` to a
-bare scope, the same way eslint does. Three lines of JSON is the whole consumer config —
-the rules and the plugin live here.
+Three lines of JSON is the whole consumer config — the rules and the plugin live here.
+
+### On the shorthand
+
+`extends: ["@vts"]` also works. commitlint appends `commitlint-config` to a bare scope,
+the same way eslint does, so it resolves to this package; both forms are verified by CI.
+
+The full name is used throughout anyway, for one reason worth knowing before choosing the
+shorter one. commitlint tries the modern prefix first and a **legacy** one last, so when
+the package is simply *not installed*, the shorthand reports the candidate it gave up on:
+
+```
+extends: ["@vts"]                     Cannot find module "@vts/conventional-changelog-lint-config"
+extends: ["@vts/commitlint-config"]   Cannot find module "@vts/commitlint-config"
+```
+
+The first names a package that has never existed, and reads as though the shorthand were
+wrong. It is not — that error means `npm install` has not run. The second names the
+package you meant. Same failure, and only one of them points at it.
 
 ## Install
 
@@ -48,17 +64,17 @@ remaining nine ship as a default. A repository may swap the whole set for types 
 
 ```js
 // inherit the starter
-export default { extends: ["@vts"] };
+export default { extends: ["@vts/commitlint-config"] };
 
 // replace it — feat and fix survive regardless
 export default {
-  extends: ["@vts"],
+  extends: ["@vts/commitlint-config"],
   rules: { "type-enum-any-case": [2, "always", ["deploy", "migrate"]] },
 };
 
 // the floor and nothing else
 export default {
-  extends: ["@vts"],
+  extends: ["@vts/commitlint-config"],
   rules: { "type-enum-any-case": [2, "always", []] },
 };
 ```

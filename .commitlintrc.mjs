@@ -6,9 +6,4 @@
 // A relative extends rather than the published name "@vts/commitlint-config": the
 // package is not installed into its own node_modules, and commitlint resolves
 // extends from the config file's directory.
-//
-// And emphatically not the bare scope "@vts". commitlint expands a lone scope to
-// <scope>/conventional-changelog-lint-config, so that string resolves to a package
-// that does not exist. It is not a shorthand for this package, and writing it as
-// though it were is what broke main once already.
 export default { extends: ["./index.mjs"] };
