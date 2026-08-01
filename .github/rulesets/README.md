@@ -52,10 +52,13 @@ population the rule exists to constrain. To push directly, set `enforcement` to
 
 ## Not included yet
 
-**No `required_status_checks`.** A required context names a job, and this repository has
-no workflow to name. Requiring one that never reports leaves every pull request waiting
-on a check that will not arrive, so the rule goes in alongside the workflow that
-satisfies it rather than ahead of it.
+**`required_status_checks` is `Validate PR title`**, from `commit-convention.yml`. It is a
+job name, so renaming that job disables the gate without a word of warning — relax the
+rule, merge the rename, tighten it again, then verify against the rules endpoint.
+
+`Lint main` is deliberately **not** required. It runs on `push` and cannot report on a
+`pull_request` event, so requiring it would leave every pull request waiting on a context
+that never arrives.
 
 **No tag ruleset.** Releases here are git tags consumed through `#semver:` ranges, so a
 `tag-protection` ruleset on `refs/tags/v*` is worth having — but the tags predate this

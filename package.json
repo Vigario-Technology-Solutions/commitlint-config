@@ -22,5 +22,9 @@
   ],
   "peerDependencies": {
     "conventional-changelog-conventionalcommits": ">=8"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20",
+    "conventional-changelog-conventionalcommits": "^8"
   }
 }
