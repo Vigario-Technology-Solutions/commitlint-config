@@ -14,7 +14,8 @@ Three lines of JSON is the whole consumer config — the rules and the plugin li
 ### On the shorthand
 
 `extends: ["@vts"]` also works. commitlint appends `commitlint-config` to a bare scope,
-the same way eslint does, so it resolves to this package; both forms are verified by CI.
+the same way eslint does, so it resolves to this package. Measured on a real install of
+the packed tarball; nothing in this repository checks it on every change yet.
 
 The full name is used throughout anyway, for one reason worth knowing before choosing the
 shorter one. commitlint tries the modern prefix first and a **legacy** one last, so when
