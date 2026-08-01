@@ -26,6 +26,7 @@
 import { execFileSync, execFile } from "node:child_process";
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
@@ -34,15 +35,14 @@ const REPO = resolve(import.meta.dirname, "..");
 const work = mkdtempSync(join(tmpdir(), "clc-consumer-"));
 after(() => rmSync(work, { recursive: true, force: true }));
 
-// npm ships as npm.cmd on Windows, and execFileSync does not go through a shell,
-// so the bare name does not resolve there. Same reason the CLI is resolved with a
-// suffix below. Neither is exercised by CI, which runs ubuntu-latest only — these
-// remove an assumption rather than prove a platform.
+// npm ships as npm.cmd on Windows, execFileSync does not go through a shell, and
+// since the fix for CVE-2024-27980 Node refuses to spawn a .cmd without one. So the
+// suffix alone is not enough — shell: true has to come with it.
 const WIN = process.platform === "win32";
 const NPM = WIN ? "npm.cmd" : "npm";
 
 const run = (cmd, args, cwd) =>
-  execFileSync(cmd, args, { cwd, stdio: "pipe", encoding: "utf8" });
+  execFileSync(cmd, args, { cwd, stdio: "pipe", encoding: "utf8", shell: WIN });
 
 before(() => {
   // Pack the repository as published.
@@ -74,9 +74,13 @@ before(() => {
 
 function lint(message, extendsName) {
   writeFileSync(join(work, ".commitlintrc.json"), JSON.stringify({ extends: [extendsName] }));
-  const cli = join(work, "node_modules", ".bin", WIN ? "commitlint.cmd" : "commitlint");
+  // The installed package's own bin entry, resolved FROM the scratch project, run
+  // with this node. No .bin shim, so no platform branch and no .cmd spawn problem.
+  const req = createRequire(join(work, "package.json"));
+  const pkg = req.resolve("@commitlint/cli/package.json");
+  const cli = resolve(pkg, "..", req(pkg).bin.commitlint);
   return new Promise((done) => {
-    const p = execFile(cli, [], { cwd: work }, (err) => done(err ? err.code ?? 1 : 0));
+    const p = execFile(process.execPath, [cli], { cwd: work }, (err) => done(err ? err.code ?? 1 : 0));
     p.stdin.end(message);
   });
 }

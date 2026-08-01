@@ -16,6 +16,7 @@
 // same trap the repository's own .commitlintrc.mjs comment describes.
 
 import { execFile } from "node:child_process";
+import { createRequire } from "node:module";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -23,10 +24,19 @@ import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 const INDEX = resolve(import.meta.dirname, "..", "index.mjs");
-// commitlint.cmd on Windows: .bin shims are platform-specific and execFile does not
-// go through a shell. Unverified there — CI runs ubuntu-latest only.
-const CLI = resolve(import.meta.dirname, "..", "node_modules", ".bin",
-                    process.platform === "win32" ? "commitlint.cmd" : "commitlint");
+// The package's own bin entry, run with this node — NOT the .bin shim.
+//
+// A shim is platform-specific (commitlint vs commitlint.cmd), and since the fix
+// for CVE-2024-27980 Node refuses to spawn a .cmd without shell: true, so the
+// obvious `join(".bin", "commitlint.cmd")` does not work on Windows either. Asking
+// the package where its entry point is sidesteps both: one path, one interpreter,
+// no branch.
+const req = createRequire(import.meta.url);
+const CLI = resolve(
+  req.resolve("@commitlint/cli/package.json"),
+  "..",
+  req("@commitlint/cli/package.json").bin.commitlint,
+);
 const work = mkdtempSync(join(tmpdir(), "clc-behaves-"));
 after(() => rmSync(work, { recursive: true, force: true }));
 
@@ -37,7 +47,7 @@ function lint(message, rules = {}) {
   const cfg = join(work, `c${n++}.json`);
   writeFileSync(cfg, JSON.stringify({ extends: [INDEX], rules }));
   return new Promise((done) => {
-    const p = execFile(CLI, ["--config", cfg], (err) => done(err ? err.code ?? 1 : 0));
+    const p = execFile(process.execPath, [CLI, "--config", cfg], (err) => done(err ? err.code ?? 1 : 0));
     p.stdin.end(message);
   });
 }
