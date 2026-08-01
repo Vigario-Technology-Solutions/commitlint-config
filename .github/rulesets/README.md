@@ -44,9 +44,24 @@ repository settings. Merge methods are settings: one API call re-enables them, t
 no ruleset and leaving nothing in the ruleset history. The rule holds the shape against
 a setting drifting back.
 
-**`required_status_checks`** — `Validate PR title`, from `commit-convention.yml`. It is a
-job name, so renaming that job disables the gate without a word of warning — relax the
-rule, merge the rename, tighten it again, then verify against the rules endpoint.
+**`required_status_checks`** — one context per assertion, no aggregate:
+
+| context | from | asserts |
+| --- | --- | --- |
+| `Validate PR title` | `commit-convention.yml` | the pull request title parses as a Conventional Commit |
+| `Config behaves (linux)` | `ci.yml` | every clause of `index.mjs`'s contract, against a config on disk |
+| `Config behaves (windows)` | `ci.yml` | the same, on the platform where the harness assumptions hide |
+| `Consumer install resolves (linux)` | `ci.yml` | the packed package, installed, reached by the name a consumer writes |
+| `Consumer install resolves (windows)` | `ci.yml` | the same, on the platform where the harness assumptions hide |
+
+These are **job names**, taken from each job's `name:` field. The two `ci.yml` jobs
+run under a matrix, and a matrix *suffixes* the job name — so `name:` is set
+explicitly there rather than left to default, and the suffix is a short stable label
+rather than the runner image, which moves. Getting this wrong does not error: the
+context simply never reports and the branch wedges. Renaming a job disables that
+gate without a word of warning, and adding a job without adding its context here leaves
+protection reading as complete while covering less. To change one: relax the rule, merge
+the change, tighten it again, then verify against the rules endpoint.
 
 `Lint main` is deliberately **not** required. It runs on `push` and cannot report on a
 `pull_request` event, so requiring it would leave every pull request waiting on a context

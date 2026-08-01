@@ -1,0 +1,91 @@
+name: CI
+
+# Public repository, so minutes are free and uncapped — rule 5. That is the case
+# rule 12 is derived for, and one job per assertion is the shape here.
+#
+#   Config behaves             every clause of index.mjs's contract, against a
+#                              config on disk.
+#   Consumer install resolves  the same package, packed and installed, reached by
+#                              the name a consumer writes.
+#
+# Each runs on linux AND windows, so four contexts. The package is plain JavaScript
+# and platform-independent; the TESTS are not — they spawn npm and a CLI, and every
+# one of those is where a platform assumption hides. The suites carried three such
+# assumptions when written, so running them on one platform was measuring the
+# harness rather than the package.
+#
+# A matrix suffixes the job name, which is why `name:` is set explicitly here: a
+# required context is a job name, and letting the default suffix appear would mean
+# renaming every context whenever a runner label changes. `matrix.label` is short
+# and stable; `matrix.os` is the thing that actually moves.
+#
+# fail-fast is off. One platform failing while the other is cancelled tells you a
+# platform broke and not which behaviour, and both answers are wanted.
+#
+# WHY TWO JOBS AND NOT ONE. They fail for different reasons and want different
+# answers. A broken rule is an edit to index.mjs; a broken install is an edit to
+# package.json, and nothing in the rules changed. Grouping them would report one
+# red check for two unrelated repairs, and the second job is roughly ten times the
+# wall clock of the first because it runs a real npm install — so grouping also
+# holds the fast answer hostage, which is rule 12's own argument.
+#
+# WHY THE SECOND EXISTS AT ALL. Everything the first asserts is reached through a
+# path on disk, which skips `exports`, `main`, the peer dependency and commitlint's
+# scoped-name resolution entirely. Those break every consumer at once and cannot
+# fail against a path. Both were proven to be live by deleting them and watching
+# the suite go red; the notes are in the test file.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  behaves:
+    name: Config behaves (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, label: linux }
+          - { os: windows-latest, label: windows }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node --test test/config-behaves.test.mjs
+
+  consumer:
+    name: Consumer install resolves (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, label: linux }
+          - { os: windows-latest, label: windows }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          # No cache. This job's whole point is a cold install of the packed
+          # tarball, and a warm npm cache is the one condition under which a
+          # missing dependency declaration still resolves.
+      - name: Pack, install and lint through the installed package
+        run: node --test test/consumer-install.test.mjs
