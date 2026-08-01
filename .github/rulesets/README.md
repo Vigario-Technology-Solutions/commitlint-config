@@ -44,9 +44,18 @@ repository settings. Merge methods are settings: one API call re-enables them, t
 no ruleset and leaving nothing in the ruleset history. The rule holds the shape against
 a setting drifting back.
 
-**`required_status_checks`** — `Validate PR title`, from `commit-convention.yml`. It is a
-job name, so renaming that job disables the gate without a word of warning — relax the
-rule, merge the rename, tighten it again, then verify against the rules endpoint.
+**`required_status_checks`** — one context per assertion, no aggregate:
+
+| context | from | asserts |
+| --- | --- | --- |
+| `Validate PR title` | `commit-convention.yml` | the pull request title parses as a Conventional Commit |
+| `Config behaves` | `ci.yml` | every clause of `index.mjs`'s contract, against a config on disk |
+| `Consumer install resolves` | `ci.yml` | the packed package, installed, reached by the name a consumer writes |
+
+These are **job names**, taken from each job's `name:` field. Renaming a job disables that
+gate without a word of warning, and adding a job without adding its context here leaves
+protection reading as complete while covering less. To change one: relax the rule, merge
+the change, tighten it again, then verify against the rules endpoint.
 
 `Lint main` is deliberately **not** required. It runs on `push` and cannot report on a
 `pull_request` event, so requiring it would leave every pull request waiting on a context

@@ -20,6 +20,9 @@
   "files": [
     "index.mjs"
   ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "peerDependencies": {
     "conventional-changelog-conventionalcommits": ">=8"
   },
