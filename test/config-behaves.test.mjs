@@ -23,7 +23,10 @@ import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 const INDEX = resolve(import.meta.dirname, "..", "index.mjs");
-const CLI = resolve(import.meta.dirname, "..", "node_modules", ".bin", "commitlint");
+// commitlint.cmd on Windows: .bin shims are platform-specific and execFile does not
+// go through a shell. Unverified there — CI runs ubuntu-latest only.
+const CLI = resolve(import.meta.dirname, "..", "node_modules", ".bin",
+                    process.platform === "win32" ? "commitlint.cmd" : "commitlint");
 const work = mkdtempSync(join(tmpdir(), "clc-behaves-"));
 after(() => rmSync(work, { recursive: true, force: true }));
 

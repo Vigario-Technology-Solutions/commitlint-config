@@ -34,6 +34,13 @@ const REPO = resolve(import.meta.dirname, "..");
 const work = mkdtempSync(join(tmpdir(), "clc-consumer-"));
 after(() => rmSync(work, { recursive: true, force: true }));
 
+// npm ships as npm.cmd on Windows, and execFileSync does not go through a shell,
+// so the bare name does not resolve there. Same reason the CLI is resolved with a
+// suffix below. Neither is exercised by CI, which runs ubuntu-latest only — these
+// remove an assumption rather than prove a platform.
+const WIN = process.platform === "win32";
+const NPM = WIN ? "npm.cmd" : "npm";
+
 const run = (cmd, args, cwd) =>
   execFileSync(cmd, args, { cwd, stdio: "pipe", encoding: "utf8" });
 
@@ -46,7 +53,7 @@ before(() => {
   // with `files: ["README.md"]` and finding index.mjs in the archive regardless.
   // So this suite does not detect a wrong `files` list, and saying otherwise would
   // be a claim nothing here checks.
-  run("npm", ["pack", "--pack-destination", work], REPO);
+  run(NPM, ["pack", "--pack-destination", work], REPO);
   const tarball = readdirSync(work).find((f) => f.endsWith(".tgz"));
   assert.ok(tarball, "npm pack produced no tarball");
 
@@ -62,12 +69,12 @@ before(() => {
   // Naming it explicitly — the obvious way to write this — made the suite pass with
   // peerDependencies deleted entirely. Measured, and the reason it is written this
   // way round.
-  run("npm", ["install", "--no-audit", "--no-fund", `./${tarball}`, "@commitlint/cli@^20"], work);
+  run(NPM, ["install", "--no-audit", "--no-fund", `./${tarball}`, "@commitlint/cli@^20"], work);
 }, { timeout: 180_000 });
 
 function lint(message, extendsName) {
   writeFileSync(join(work, ".commitlintrc.json"), JSON.stringify({ extends: [extendsName] }));
-  const cli = join(work, "node_modules", ".bin", "commitlint");
+  const cli = join(work, "node_modules", ".bin", WIN ? "commitlint.cmd" : "commitlint");
   return new Promise((done) => {
     const p = execFile(cli, [], { cwd: work }, (err) => done(err ? err.code ?? 1 : 0));
     p.stdin.end(message);
